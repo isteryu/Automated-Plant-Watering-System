@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 Automated Plant Watering System</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f0a;
+    --surface: #111711;
+    --surface2: #162016;
+    --green: #4ade80;
+    --green-dim: #22c55e;
+    --green-dark: #166534;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --text: #e8f5e8;
+    --text-dim: #86a886;
+    --border: #1f2f1f;
+    --border-bright: #2d4a2d;
+    --mono: 'Space Mono', monospace;
+    --serif: 'Playfair Display', serif;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(74,222,128,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 80% 80%, rgba(34,197,94,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 80px 0 60px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(74,222,128,0.08);
+    border: 1px solid rgba(74,222,128,0.2);
+    color: var(--green);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .hero-tag::before { content: '▶'; font-size: 8px; }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  h1 span { color: var(--green); }
+  .hero-sub {
+    font-size: 17px;
+    color: var(--text-dim);
+    max-width: 560px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+  .hero-meta {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── NAV TABS ── */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .tab {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: none;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .tab:hover { color: var(--text); background: var(--surface); }
+  .tab.active {
+    color: var(--green);
+    background: rgba(74,222,128,0.08);
+    border-color: rgba(74,222,128,0.25);
+  }
+  .tab-icon { font-size: 14px; }
+
+  /* ── SECTIONS ── */
+  .section { display: none; padding: 48px 0; }
+  .section.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  .section-header { margin-bottom: 36px; }
+  .section-header h2 {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .section-header p { color: var(--text-dim); font-size: 15px; line-height: 1.6; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border-bright); }
+  .card-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .card-icon {
+    width: 40px; height: 40px;
+    background: rgba(74,222,128,0.1);
+    border: 1px solid rgba(74,222,128,0.2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .card h3 { font-family: var(--serif); font-size: 18px; font-weight: 700; }
+  .card p { color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  @media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+  /* ── COMPONENT LIST ── */
+  .component-item {
+    display: flex; align-items: flex-start; gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .component-num {
+    width: 28px; height: 28px;
+    background: var(--green-dark);
+    color: var(--green);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .component-info h4 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .component-info p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .badge {
+    display: inline-block;
+    background: rgba(251,191,36,0.1);
+    color: var(--amber);
+    border: 1px solid rgba(251,191,36,0.2);
+    font-family: var(--mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 4px;
+    margin-top: 6px;
+  }
+  .badge.green { background: rgba(74,222,128,0.1); color: var(--green); border-color: rgba(74,222,128,0.2); }
+  .badge.blue { background: rgba(96,165,250,0.1); color: var(--blue); border-color: rgba(96,165,250,0.2); }
+
+  /* ── WIRING DIAGRAM ── */
+  .wiring-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+  .wiring-table th {
+    text-align: left; padding: 10px 14px;
+    color: var(--text-dim); font-weight: 400;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .wiring-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .wiring-table tr:last-child td { border-bottom: none; }
+  .pin { color: var(--green); }
+  .wire { color: var(--text-dim); font-size: 10px; margin: 0 4px; }
+
+  /* ── CODE BLOCKS ── */
+  .code-wrap { position: relative; margin: 16px 0; }
+  .code-label {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--text-dim); letter-spacing: 0.05em;
+    padding: 8px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .code-label::before { content: '●'; color: var(--green); }
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 0 0 8px 8px;
+    padding: 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: #c8e6c8;
+  }
+  .kw { color: #f472b6; }
+  .str { color: #fbbf24; }
+  .cm { color: #4a6a4a; }
+  .fn { color: #60a5fa; }
+  .num { color: #a78bfa; }
+  .cp { color: #67e8f9; }
+
+  /* ── STEPS ── */
+  .step {
+    display: flex; gap: 20px;
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    font-family: var(--serif);
+    font-size: 48px;
+    font-weight: 900;
+    color: rgba(74,222,128,0.15);
+    line-height: 1;
+    flex-shrink: 0;
+    width: 60px;
+  }
+  .step-content h3 { font-size: 18px; font-weight: 500; margin-bottom: 10px; }
+  .step-content p { color: var(--text-dim); font-size: 14px; line-height: 1.7; }
+
+  /* ── ARCH DIAGRAM ── */
+  .arch {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    font-family: var(--mono); font-size: 13px;
+  }
+  .arch-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+  .arch-box {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-size: 12px;
+    text-align: center;
+  }
+  .arch-box.main { border-color: rgba(74,222,128,0.4); color: var(--green); }
+  .arch-box.cloud { border-color: rgba(96,165,250,0.4); color: var(--blue); }
+  .arch-box.mobile { border-color: rgba(251,191,36,0.4); color: var(--amber); }
+  .arch-arrow { color: var(--text-dim); font-size: 16px; }
+
+  /* ── TIMELINE ── */
+  .timeline-item {
+    display: flex; gap: 16px; margin-bottom: 24px;
+  }
+  .tl-left { width: 100px; flex-shrink: 0; text-align: right; }
+  .tl-week { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+  .tl-days { font-size: 12px; color: var(--green); font-weight: 500; }
+  .tl-line {
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+    flex-shrink: 0;
+  }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-top: 4px; }
+  .tl-bar { width: 2px; background: var(--border); flex: 1; min-height: 32px; }
+  .tl-right h4 { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  .tl-right p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+  .tl-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tl-tag {
+    font-family: var(--mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 4px;
+    background: var(--surface2); color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  /* ── CHECKLIST ── */
+  .checklist-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .checklist-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border-bright);
+    border-radius: 4px; flex-shrink: 0; margin-top: 1px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .check-box.checked { background: var(--green); border-color: var(--green); }
+  .check-box.checked::after { content: '✓'; color: black; font-size: 12px; font-weight: 700; }
+  .check-label { font-size: 14px; line-height: 1.5; cursor: pointer; }
+  .check-label.checked { color: var(--text-dim); text-decoration: line-through; }
+
+  /* ── COST TABLE ── */
+  .cost-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .cost-row:last-child { border-bottom: none; }
+  .cost-name { color: var(--text); }
+  .cost-price { font-family: var(--mono); color: var(--green); }
+  .cost-total {
+    display: flex; justify-content: space-between;
+    padding: 16px 0;
+    font-family: var(--mono); font-size: 16px;
+    border-top: 2px solid var(--green-dark);
+    margin-top: 8px;
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-bar {
+    height: 4px; background: var(--border);
+    border-radius: 2px; margin-top: 8px; overflow: hidden;
+  }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s ease; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+  /* ── LIVE SIMULATOR ── */
+  .sim-card {
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .sim-display {
+    display: flex; gap: 24px; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .moisture-circle {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; flex-shrink: 0;
+    background: conic-gradient(var(--green) 0%, var(--border) 0%);
+    transition: background 0.5s;
+  }
+  .moisture-val { font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--green); }
+  .moisture-lbl { font-size: 10px; color: var(--text-dim); font-family: var(--mono); letter-spacing: 0.05em; }
+  .sim-info { flex: 1; min-width: 200px; }
+  .sim-stat { margin-bottom: 14px; }
+  .sim-stat-label { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .sim-stat-val { font-size: 15px; font-weight: 500; }
+  .pump-indicator {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 6px; font-family: var(--mono); font-size: 12px;
+  }
+  .pump-off { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .pump-on { background: rgba(74,222,128,0.1); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+  .pump-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .pump-off .pump-dot { background: var(--red); }
+  .pump-on .pump-dot { background: var(--green); animation: pulse 1s infinite; }
+  .sim-controls { display: flex; gap: 12px; flex-wrap: wrap; }
+  .sim-btn {
+    padding: 10px 20px; border-radius: 6px; border: none;
+    font-family: var(--mono); font-size: 12px; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.05em;
+  }
+  .sim-btn-primary { background: var(--green); color: black; font-weight: 700; }
+  .sim-btn-primary:hover { background: #86efac; }
+  .sim-btn-secondary {
+    background: var(--surface); color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .sim-btn-secondary:hover { color: var(--text); border-color: var(--border-bright); }
+  .sim-log {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-top: 16px;
+    height: 120px; overflow-y: auto;
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  }
+  .log-entry { padding: 2px 0; }
+  .log-entry.warn { color: var(--amber); }
+  .log-entry.ok { color: var(--green); }
+  .log-entry.pump { color: var(--blue); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">IoT Personal Project — Dec 2024 to Jan 2025</div>
+    <h1>Automated Plant<br><span>Watering System</span></h1>
+    <p class="hero-sub">A complete guide to building your soil moisture monitoring system with automated irrigation, relay pump control, and mobile push notifications.</p>
+    <div class="hero-meta">
+      <span><span class="dot"></span> ESP32 + Sensors</span>
+      <span>⚡ Node.js Backend</span>
+      <span>📱 Mobile Notifications</span>
+      <span>~$25 total cost</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')"><span class="tab-icon">🗺</span> Overview</button>
+    <button class="tab" onclick="showTab('hardware')"><span class="tab-icon">🔧</span> Hardware</button>
+    <button class="tab" onclick="showTab('firmware')"><span class="tab-icon">💾</span> Firmware</button>
+    <button class="tab" onclick="showTab('backend')"><span class="tab-icon">☁️</span> Backend</button>
+    <button class="tab" onclick="showTab('simulator')"><span class="tab-icon">▶</span> Simulator</button>
+    <button class="tab" onclick="showTab('checklist')"><span class="tab-icon">✓</span> Checklist</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="section active">
+    <div class="section-header">
+      <h2>How It All Works</h2>
+      <p>Here's the full picture — from sensor to your phone in 4 layers.</p>
+    </div>
+
+    <!-- Architecture -->
+    <div class="arch" style="margin-bottom:24px;">
+      <div class="arch-row">
+        <div class="arch-box">🌱 Soil Sensor</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box main">ESP32 MCU</div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">⚡ Relay + Pump</div>
+      </div>
+      <div style="text-align:center;color:var(--text-dim);margin:8px 0;font-size:18px;">↕</div>
+      <div class="arch-row">
+        <div class="arch-box cloud">Node.js API Server</div>
+      </div>
+      <div style="text-align:center;color:var(--text-dim);margin:8px 0;font-size:18px;">↕ &nbsp; ↕ &nbsp; ↕</div>
+      <div class="arch-row">
+        <div class="arch-box">📊 Dashboard</div>
+        <div class="arch-box mobile">📱 Phone Notifications</div>
+        <div class="arch-box">💾 SQLite DB</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">1️⃣</div>
+          <h3>Sense</h3>
+        </div>
+        <p>A capacitive soil moisture sensor reads the water content in your plant's soil every 60 seconds and sends an analog voltage to the ESP32's ADC pin.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">2️⃣</div>
+          <h3>Decide</h3>
+        </div>
+        <p>The ESP32 compares the reading against thresholds. If the soil is too dry, it triggers the relay which activates the water pump for 3 seconds.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">3️⃣</div>
+          <h3>Report</h3>
+        </div>
+        <p>Over WiFi, the ESP32 POSTs sensor data to your Node.js backend, which stores readings in a SQLite database and serves them to a dashboard.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">4️⃣</div>
+          <h3>Notify</h3>
+        </div>
+        <p>When the pump fires or moisture is critically low, your backend sends an instant push notification to your phone via ntfy.sh — no app building required.</p>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section-header" style="margin-top:48px;">
+      <h2>Build Timeline</h2>
+      <p>Break the project into 4 focused weeks.</p>
+    </div>
+
+    <div class="timeline-item">
+      <div class="tl-left"><div class="tl-week">WEEK</div><div class="tl-days">01</div></div>
+      <div class="tl-line"><div class="tl-dot"></div><div class="tl-bar"></div></div>
+      <div class="tl-right">
+        <h4>Hardware Assembly & Sensor Testing</h4>
+        <p>Order components, wire the sensor to ESP32, read analog values via Serial Monitor, calibrate dry/wet thresholds.</p>
+        <div class="tl-tags"><span class="tl-tag">ESP32 setup</span><span class="tl-tag">sensor calibration</span><span class="tl-tag">relay wiring</span></div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-left"><div class="tl-week">WEEK</div><div class="tl-days">02</div></div>
+      <div class="tl-line"><div class="tl-dot"></div><div class="tl-bar"></div></div>
+      <div class="tl-right">
+        <h4>Firmware Logic + WiFi</h4>
+        <p>Write the auto-watering loop, connect to WiFi, POST data to a test endpoint. Test pump firing on threshold breach.</p>
+        <div class="tl-tags"><span class="tl-tag">Arduino IDE</span><span class="tl-tag">HTTPClient</span><span class="tl-tag">ArduinoJson</span></div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-left"><div class="tl-week">WEEK</div><div class="tl-days">03</div></div>
+      <div class="tl-line"><div class="tl-dot"></div><div class="tl-bar"></div></div>
+      <div class="tl-right">
+        <h4>Backend + Notifications</h4>
+        <p>Spin up Node.js Express server, connect SQLite, integrate ntfy.sh for push notifications. Deploy to local machine or free cloud tier.</p>
+        <div class="tl-tags"><span class="tl-tag">Node.js</span><span class="tl-tag">Express</span><span class="tl-tag">ntfy.sh</span><span class="tl-tag">SQLite</span></div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="tl-left"><div class="tl-week">WEEK</div><div class="tl-days">04</div></div>
+      <div class="tl-line"><div class="tl-dot"></div><div class="tl-bar"></div></div>
+      <div class="tl-right">
+        <h4>Dashboard + Polish</h4>
+        <p>Add a React/HTML dashboard with live moisture charts. Enclose hardware in a case. Document the project for your resume/portfolio.</p>
+        <div class="tl-tags"><span class="tl-tag">recharts</span><span class="tl-tag">3D print / enclosure</span><span class="tl-tag">documentation</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HARDWARE -->
+  <div id="tab-hardware" class="section">
+    <div class="section-header">
+      <h2>Hardware Components</h2>
+      <p>Everything you need — total cost around $20–25 from Amazon or AliExpress.</p>
+    </div>
+
+    <div class="component-item">
+      <div class="component-num">01</div>
+      <div class="component-info">
+        <h4>ESP32 Development Board</h4>
+        <p>The brains. Has built-in WiFi + Bluetooth, dual-core processor, and multiple ADC pins for analog sensor reading. Much better than Arduino for IoT.</p>
+        <span class="badge green">~$8</span> <span class="badge blue">REQUIRED</span>
+      </div>
+    </div>
+    <div class="component-item">
+      <div class="component-num">02</div>
+      <div class="component-info">
+        <h4>Capacitive Soil Moisture Sensor v1.2</h4>
+        <p>Measures soil moisture via capacitance (not resistance), so it won't corrode. Outputs 0–3.3V analog signal. Much more durable than resistive sensors.</p>
+        <span class="badge green">~$3</span> <span class="badge blue">REQUIRED</span>
+      </div>
+    </div>
+    <div class="component-item">
+      <div class="component-num">03</div>
+      <div class="component-info">
+        <h4>5V Single-Channel Relay Module</h4>
+        <p>Acts as a switch between the ESP32 (3.3V logic) and the pump (5V power). Active-LOW design means GPIO LOW = pump ON.</p>
+        <span class="badge green">~$2</span> <span class="badge blue">REQUIRED</span>
+      </div>
+    </div>
+    <div class="component-item">
+      <div class="component-num">04</div>
+      <div class="component-info">
+        <h4>Mini Submersible Water Pump (3–5V)</h4>
+        <p>Small DC pump that draws water from a reservoir and delivers it to the plant. Runs for 2–5 seconds to deliver ~10–20ml per watering cycle.</p>
+        <span class="badge green">~$3</span> <span class="badge blue">REQUIRED</span>
+      </div>
+    </div>
+    <div class="component-item">
+      <div class="component-num">05</div>
+      <div class="component-info">
+        <h4>Jumper Wires + Breadboard</h4>
+        <p>For prototyping without soldering. Male-to-female wires for sensor/relay, male-to-male for breadboard connections. Upgrade to perfboard later.</p>
+        <span class="badge green">~$5</span> <span class="badge">REQUIRED</span>
+      </div>
+    </div>
+    <div class="component-item">
+      <div class="component-num">06</div>
+      <div class="component-info">
+        <h4>USB Power Supply + Tubing</h4>
+        <p>5V 2A USB adapter for power. Silicone tubing (5mm inner diameter) to route water from reservoir to plant. Buy 1–2 meters.</p>
+        <span class="badge green">~$4</span> <span class="badge">REQUIRED</span>
+      </div>
+    </div>
+
+    <!-- Wiring -->
+    <div class="section-header" style="margin-top:40px;">
+      <h2>Wiring Connections</h2>
+      <p>Connect everything as shown in the table below.</p>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="wiring-table">
+        <tr>
+          <th>From</th><th>Pin</th><th></th><th>To</th><th>Pin</th>
+        </tr>
+        <tr><td>Moisture Sensor</td><td class="pin">AOUT</td><td class="wire">───</td><td>ESP32</td><td class="pin">GPIO 34 (ADC)</td></tr>
+        <tr><td>Moisture Sensor</td><td class="pin">VCC</td><td class="wire">───</td><td>ESP32</td><td class="pin">3.3V</td></tr>
+        <tr><td>Moisture Sensor</td><td class="pin">GND</td><td class="wire">───</td><td>ESP32</td><td class="pin">GND</td></tr>
+        <tr><td>Relay Module</td><td class="pin">IN</td><td class="wire">───</td><td>ESP32</td><td class="pin">GPIO 26</td></tr>
+        <tr><td>Relay Module</td><td class="pin">VCC</td><td class="wire">───</td><td>ESP32</td><td class="pin">VIN (5V)</td></tr>
+        <tr><td>Relay Module</td><td class="pin">GND</td><td class="wire">───</td><td>ESP32</td><td class="pin">GND</td></tr>
+        <tr><td>Relay Module</td><td class="pin">COM</td><td class="wire">───</td><td>5V Power</td><td class="pin">+5V</td></tr>
+        <tr><td>Relay Module</td><td class="pin">NO</td><td class="wire">───</td><td>Water Pump</td><td class="pin">+ (positive)</td></tr>
+        <tr><td>Water Pump</td><td class="pin">− (negative)</td><td class="wire">───</td><td>Common</td><td class="pin">GND</td></tr>
+      </table>
+    </div>
+
+    <!-- Cost summary -->
+    <div class="section-header" style="margin-top:40px;"><h2>Budget Breakdown</h2></div>
+    <div class="card">
+      <div class="cost-row"><span class="cost-name">ESP32 Dev Board</span><span class="cost-price">$8.00</span></div>
+      <div class="cost-row"><span class="cost-name">Capacitive Soil Sensor × 2</span><span class="cost-price">$6.00</span></div>
+      <div class="cost-row"><span class="cost-name">5V Relay Module</span><span class="cost-price">$2.50</span></div>
+      <div class="cost-row"><span class="cost-name">Mini Water Pump</span><span class="cost-price">$3.00</span></div>
+      <div class="cost-row"><span class="cost-name">Breadboard + Jumper Wires</span><span class="cost-price">$5.00</span></div>
+      <div class="cost-row"><span class="cost-name">Silicone Tubing (1m)</span><span class="cost-price">$2.00</span></div>
+      <div class="cost-total"><span>TOTAL</span><span>~$26.50</span></div>
+    </div>
+  </div>
+
+  <!-- FIRMWARE -->
+  <div id="tab-firmware" class="section">
+    <div class="section-header">
+      <h2>ESP32 Firmware</h2>
+      <p>Write this in Arduino IDE. Install board: "esp32 by Espressif". Required libraries: ArduinoJson, HTTPClient (built-in).</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Install Arduino IDE + ESP32 Board</h3>
+        <p>Download Arduino IDE 2.x. Go to <strong>File → Preferences</strong>, paste this URL in "Additional Boards Manager URLs":<br><code style="color:var(--green);font-family:var(--mono);font-size:12px;">https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json</code><br>Then go to Tools → Board → Boards Manager, search "esp32" and install.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>Calibrate Your Sensor</h3>
+        <p>Before writing the full firmware, upload this quick sketch to find your sensor's dry/wet values — they vary by sensor.</p>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">calibrate.ino — Run this first</div>
+      <pre><span class="cp">#define</span> MOISTURE_PIN <span class="num">34</span>
+
+<span class="kw">void</span> <span class="fn">setup</span>() {
+  Serial.begin(<span class="num">115200</span>);
+}
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">int</span> raw = analogRead(MOISTURE_PIN);
+  <span class="cm">// Stick sensor in dry air → note this value (your DRY_THRESHOLD)</span>
+  <span class="cm">// Submerge in water → note this value (your WET_THRESHOLD)</span>
+  Serial.print(<span class="str">"Raw ADC: "</span>); Serial.println(raw);
+  delay(<span class="num">1000</span>);
+}</pre>
+    </div>
+
+    <div class="step" style="margin-top:24px;">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>Main Firmware — Copy & Customize</h3>
+        <p>Replace WiFi credentials, server URL, and thresholds from your calibration above.</p>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">main.ino — Full firmware</div>
+      <pre><span class="cp">#include</span> <span class="str">&lt;WiFi.h&gt;</span>
+<span class="cp">#include</span> <span class="str">&lt;HTTPClient.h&gt;</span>
+<span class="cp">#include</span> <span class="str">&lt;ArduinoJson.h&gt;</span>
+
+<span class="cm">// ── CONFIG ─────────────────────────────────────</span>
+<span class="cp">#define</span> MOISTURE_PIN  <span class="num">34</span>
+<span class="cp">#define</span> RELAY_PIN     <span class="num">26</span>
+<span class="cp">#define</span> PUMP_ON       <span class="num">LOW</span>   <span class="cm">// Relay is active-LOW</span>
+<span class="cp">#define</span> PUMP_OFF      <span class="num">HIGH</span>
+<span class="cp">#define</span> DRY_THRESHOLD <span class="num">2800</span>  <span class="cm">// Tune from calibration!</span>
+<span class="cp">#define</span> WET_THRESHOLD <span class="num">1500</span>  <span class="cm">// Tune from calibration!</span>
+<span class="cp">#define</span> PUMP_DURATION <span class="num">3000</span>  <span class="cm">// ms to run pump</span>
+<span class="cp">#define</span> CHECK_INTERVAL <span class="num">60000</span> <span class="cm">// ms between readings</span>
+
+<span class="kw">const</span> <span class="kw">char</span>* SSID      = <span class="str">"YOUR_WIFI_NAME"</span>;
+<span class="kw">const</span> <span class="kw">char</span>* PASSWORD  = <span class="str">"YOUR_WIFI_PASS"</span>;
+<span class="kw">const</span> <span class="kw">char</span>* SERVER_URL = <span class="str">"http://192.168.1.100:3000/api/reading"</span>;
+<span class="cm">// ───────────────────────────────────────────────</span>
+
+<span class="kw">void</span> <span class="fn">setup</span>() {
+  Serial.begin(<span class="num">115200</span>);
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, PUMP_OFF);
+
+  WiFi.begin(SSID, PASSWORD);
+  Serial.print(<span class="str">"Connecting to WiFi"</span>);
+  <span class="kw">while</span> (WiFi.status() != WL_CONNECTED) {
+    delay(<span class="num">500</span>); Serial.print(<span class="str">"."</span>);
+  }
+  Serial.println(<span class="str">"\nConnected! IP: "</span> + WiFi.localIP().toString());
+}
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="kw">int</span> raw         = analogRead(MOISTURE_PIN);
+  <span class="kw">int</span> moisturePct = map(raw, <span class="num">4095</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">100</span>);
+  <span class="kw">bool</span> pumped     = <span class="kw">false</span>;
+
+  Serial.printf(<span class="str">"Moisture: %d%% (raw: %d)\n"</span>, moisturePct, raw);
+
+  <span class="kw">if</span> (raw > DRY_THRESHOLD) {
+    Serial.println(<span class="str">"Soil dry → activating pump..."</span>);
+    digitalWrite(RELAY_PIN, PUMP_ON);
+    delay(PUMP_DURATION);
+    digitalWrite(RELAY_PIN, PUMP_OFF);
+    pumped = <span class="kw">true</span>;
+    Serial.println(<span class="str">"Pump OFF."</span>);
+  }
+
+  <span class="fn">sendReading</span>(moisturePct, pumped);
+  delay(CHECK_INTERVAL);
+}
+
+<span class="kw">void</span> <span class="fn">sendReading</span>(<span class="kw">int</span> moisture, <span class="kw">bool</span> pumped) {
+  <span class="kw">if</span> (WiFi.status() != WL_CONNECTED) <span class="kw">return</span>;
+  HTTPClient http;
+  http.begin(SERVER_URL);
+  http.addHeader(<span class="str">"Content-Type"</span>, <span class="str">"application/json"</span>);
+
+  StaticJsonDocument&lt;<span class="num">128</span>&gt; doc;
+  doc[<span class="str">"moisture"</span>]   = moisture;
+  doc[<span class="str">"pump_fired"</span>] = pumped;
+  doc[<span class="str">"device_id"</span>]  = <span class="str">"plant-01"</span>;
+
+  String body; serializeJson(doc, body);
+  <span class="kw">int</span> code = http.POST(body);
+  Serial.printf(<span class="str">"Server responded: %d\n"</span>, code);
+  http.end();
+}</pre>
+    </div>
+  </div>
+
+  <!-- BACKEND -->
+  <div id="tab-backend" class="section">
+    <div class="section-header">
+      <h2>Backend + Notifications</h2>
+      <p>A simple Node.js server that receives data from the ESP32, stores it, and pushes notifications to your phone.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Setup Project</h3>
+        <p>Run these commands in your terminal to initialize the Node.js project.</p>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">terminal — project setup</div>
+      <pre><span class="cm"># Create project folder</span>
+mkdir plant-server && cd plant-server
+npm init -y
+
+<span class="cm"># Install dependencies</span>
+npm install express better-sqlite3 axios
+
+<span class="cm"># Create main file</span>
+touch server.js</pre>
+    </div>
+
+    <div class="step" style="margin-top:24px;">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>Set Up Notifications (30 seconds)</h3>
+        <p>Install the <strong>ntfy</strong> app on your phone (iOS or Android — it's free). Subscribe to a unique topic name like <code style="color:var(--green);font-family:var(--mono);">my-plant-abc123</code>. That's it — no Firebase setup needed.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>Write the Server</h3>
+        <p>Copy this into <code style="color:var(--green);font-family:var(--mono);">server.js</code> and change the ntfy topic to your unique name.</p>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">server.js — Full backend</div>
+      <pre><span class="kw">const</span> express = require(<span class="str">'express'</span>);
+<span class="kw">const</span> Database = require(<span class="str">'better-sqlite3'</span>);
+<span class="kw">const</span> axios = require(<span class="str">'axios'</span>);
+
+<span class="kw">const</span> app = express();
+app.use(express.json());
+app.use(express.static(<span class="str">'public'</span>)); <span class="cm">// Serve dashboard files</span>
+
+<span class="cm">// ── DATABASE SETUP ──────────────────────────────</span>
+<span class="kw">const</span> db = <span class="kw">new</span> Database(<span class="str">'plant.db'</span>);
+db.exec(<span class="str">`
+  CREATE TABLE IF NOT EXISTS readings (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_id TEXT,
+    moisture  INTEGER,
+    pump_fired INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`</span>);
+
+<span class="cm">// ── NTFY NOTIFICATION ───────────────────────────</span>
+<span class="kw">const</span> NTFY_TOPIC = <span class="str">'my-plant-abc123'</span>; <span class="cm">// CHANGE THIS</span>
+
+<span class="kw">async function</span> <span class="fn">notify</span>(title, body, priority = <span class="str">'default'</span>) {
+  <span class="kw">try</span> {
+    <span class="kw">await</span> axios.post(<span class="str">`https://ntfy.sh/${NTFY_TOPIC}`</span>, body, {
+      headers: { <span class="str">'Title'</span>: title, <span class="str">'Priority'</span>: priority }
+    });
+  } <span class="kw">catch</span> (e) { console.error(<span class="str">'Notification failed:'</span>, e.message); }
+}
+
+<span class="cm">// ── RECEIVE DATA FROM ESP32 ─────────────────────</span>
+app.post(<span class="str">'/api/reading'</span>, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> { moisture, pump_fired, device_id } = req.body;
+
+  <span class="cm">// Save to database</span>
+  db.prepare(<span class="str">`
+    INSERT INTO readings (device_id, moisture, pump_fired)
+    VALUES (?, ?, ?)
+  `</span>).run(device_id, moisture, pump_fired ? <span class="num">1</span> : <span class="num">0</span>);
+
+  console.log(<span class="str">`[${device_id}] Moisture: ${moisture}% | Pumped: ${pump_fired}`</span>);
+
+  <span class="cm">// Send notifications</span>
+  <span class="kw">if</span> (pump_fired) {
+    <span class="kw">await</span> <span class="fn">notify</span>(
+      <span class="str">'🌱 Plant Watered'</span>,
+      <span class="str">`Moisture was low (${moisture}%). Auto-watering triggered.`</span>
+    );
+  }
+  <span class="kw">if</span> (moisture &lt; <span class="num">15</span>) {
+    <span class="kw">await</span> <span class="fn">notify</span>(
+      <span class="str">'⚠️ Critical: Plant Needs Water'</span>,
+      <span class="str">`Moisture critically low at ${moisture}%! Check your system.`</span>,
+      <span class="str">'urgent'</span>
+    );
+  }
+  res.json({ status: <span class="str">'ok'</span> });
+});
+
+<span class="cm">// ── SERVE READINGS TO DASHBOARD ─────────────────</span>
+app.get(<span class="str">'/api/readings'</span>, (req, res) => {
+  <span class="kw">const</span> rows = db.prepare(<span class="str">`
+    SELECT * FROM readings ORDER BY created_at DESC LIMIT 100
+  `</span>).all();
+  res.json(rows.reverse()); <span class="cm">// Oldest first for chart</span>
+});
+
+app.listen(<span class="num">3000</span>, () => {
+  console.log(<span class="str">'🌿 Plant server running on http://localhost:3000'</span>);
+});</pre>
+    </div>
+
+    <div class="step" style="margin-top:24px;">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>Run & Test</h3>
+        <p>Start the server and point your ESP32's SERVER_URL to your computer's local IP.</p>
+      </div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">terminal</div>
+      <pre><span class="cm"># Start the server</span>
+node server.js
+
+<span class="cm"># Find your local IP (use this in ESP32 SERVER_URL)</span>
+<span class="cm"># macOS/Linux:</span>
+ifconfig | grep "inet "
+<span class="cm"># Windows:</span>
+ipconfig
+
+<span class="cm"># Test the endpoint manually:</span>
+curl -X POST http://localhost:3000/api/reading \
+  -H "Content-Type: application/json" \
+  -d '{"device_id":"plant-01","moisture":25,"pump_fired":true}'</pre>
+    </div>
+  </div>
+
+  <!-- SIMULATOR -->
+  <div id="tab-simulator" class="section">
+    <div class="section-header">
+      <h2>Live System Simulator</h2>
+      <p>Preview how your system behaves before you build it. The logic here mirrors your actual ESP32 firmware.</p>
+    </div>
+
+    <div class="sim-card">
+      <div class="sim-display">
+        <div class="moisture-circle" id="moistureCircle">
+          <div class="moisture-val" id="moistureVal">65%</div>
+          <div class="moisture-lbl">MOISTURE</div>
+        </div>
+        <div class="sim-info">
+          <div class="sim-stat">
+            <div class="sim-stat-label">Pump Status</div>
+            <div class="sim-stat-val"><span class="pump-indicator pump-off" id="pumpStatus"><span class="pump-dot"></span>PUMP OFF</span></div>
+          </div>
+          <div class="sim-stat">
+            <div class="sim-stat-label">Raw ADC Value</div>
+            <div class="sim-stat-val" id="rawVal" style="font-family:var(--mono);color:var(--text-dim);">1475 / 4095</div>
+          </div>
+          <div class="sim-stat">
+            <div class="sim-stat-label">Threshold</div>
+            <div class="sim-stat-val" style="font-family:var(--mono);font-size:13px;color:var(--text-dim);">DRY &lt; 30% → trigger pump</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div class="sim-stat-label" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Adjust Soil Moisture</div>
+        <input type="range" id="moistureSlider" min="0" max="100" value="65"
+          style="width:100%;accent-color:var(--green);height:4px;cursor:pointer;" oninput="updateSim(this.value)">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:4px;">
+          <span>0% (bone dry)</span><span>50%</span><span>100% (soaked)</span>
+        </div>
+      </div>
+
+      <div class="sim-controls">
+        <button class="sim-btn sim-btn-primary" onclick="runCycle()">▶ Run Check Cycle</button>
+        <button class="sim-btn sim-btn-secondary" onclick="drainSoil()">📉 Drain Soil</button>
+        <button class="sim-btn sim-btn-secondary" onclick="clearLog()">✕ Clear Log</button>
+      </div>
+
+      <div class="sim-log" id="simLog">
+        <div class="log-entry ok">[BOOT] System initialized. Connecting to WiFi...</div>
+        <div class="log-entry ok">[WIFI] Connected. IP: 192.168.1.105</div>
+        <div class="log-entry">[INFO] Monitoring started. Check interval: 60s</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div id="tab-checklist" class="section">
+    <div class="section-header">
+      <h2>Build Checklist</h2>
+      <p>Track your progress. Click each item to check it off.</p>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text-dim);margin-bottom:8px;">OVERALL PROGRESS</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--green);margin-top:6px;" id="progressLabel">0 / 18 complete</div>
+    </div>
+
+    <div style="font-size:12px;font-family:var(--mono);color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">📦 Hardware</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div id="checklist-hardware"></div>
+    </div>
+
+    <div style="font-size:12px;font-family:var(--mono);color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">💾 Firmware</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div id="checklist-firmware"></div>
+    </div>
+
+    <div style="font-size:12px;font-family:var(--mono);color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">☁️ Backend & Notifications</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div id="checklist-backend"></div>
+    </div>
+
+    <div style="font-size:12px;font-family:var(--mono);color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">🚀 Polish & Deploy</div>
+    <div class="card">
+      <div id="checklist-polish"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ── TABS ──────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── SIMULATOR ────────────────────────────────────
+let currentMoisture = 65;
+let drainInterval = null;
+
+function log(msg, type='') {
+  const el = document.getElementById('simLog');
+  const now = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.textContent = `[${now}] ${msg}`;
+  el.appendChild(entry);
+  el.scrollTop = el.scrollHeight;
+}
+
+function updateSim(val) {
+  currentMoisture = parseInt(val);
+  const pct = currentMoisture;
+  const raw = Math.round(4095 - (pct / 100) * (4095 - 800));
+
+  document.getElementById('moistureVal').textContent = pct + '%';
+  document.getElementById('rawVal').textContent = raw + ' / 4095';
+
+  // Update circle color
+  const circle = document.getElementById('moistureCircle');
+  const color = pct < 30 ? 'var(--red)' : pct < 50 ? 'var(--amber)' : 'var(--green)';
+  document.getElementById('moistureVal').style.color = color;
+  circle.style.borderColor = color;
+}
+
+function runCycle() {
+  const pct = currentMoisture;
+  log(`Reading soil moisture... ${pct}%`);
+
+  setTimeout(() => {
+    if (pct < 30) {
+      log(`Moisture low (${pct}%) — threshold is 30%`, 'warn');
+      setTimeout(() => {
+        log('Activating pump relay...', 'pump');
+        document.getElementById('pumpStatus').className = 'pump-indicator pump-on';
+        document.getElementById('pumpStatus').innerHTML = '<span class="pump-dot"></span>PUMP ON';
+        setTimeout(() => {
+          document.getElementById('pumpStatus').className = 'pump-indicator pump-off';
+          document.getElementById('pumpStatus').innerHTML = '<span class="pump-dot"></span>PUMP OFF';
+          log('Pump deactivated after 3s.', 'pump');
+          log('POSTing to server: {moisture:' + pct + ', pump_fired:true}');
+          log('📱 Notification sent: "Plant Watered"', 'ok');
+        }, 3000);
+      }, 500);
+    } else {
+      log(`Moisture OK (${pct}%). No action needed.`, 'ok');
+      log('POSTing to server: {moisture:' + pct + ', pump_fired:false}');
+    }
+  }, 600);
+}
+
+function drainSoil() {
+  if (drainInterval) { clearInterval(drainInterval); drainInterval = null; return; }
+  log('Simulating soil drying over time...', 'warn');
+  drainInterval = setInterval(() => {
+    currentMoisture = Math.max(0, currentMoisture - 2);
+    document.getElementById('moistureSlider').value = currentMoisture;
+    updateSim(currentMoisture);
+    if (currentMoisture <= 0) { clearInterval(drainInterval); drainInterval = null; }
+  }, 300);
+}
+
+function clearLog() {
+  document.getElementById('simLog').innerHTML = '';
+  log('Log cleared.', 'ok');
+}
+
+// ── CHECKLIST ─────────────────────────────────────
+const lists = {
+  hardware: [
+    'Order ESP32 development board',
+    'Order capacitive soil moisture sensor',
+    'Order 5V relay module',
+    'Order mini submersible water pump',
+    'Order jumper wires and breadboard',
+    'Order silicone tubing',
+  ],
+  firmware: [
+    'Install Arduino IDE 2.x',
+    'Install ESP32 board support package',
+    'Upload calibration sketch and note thresholds',
+    'Wire sensor → ESP32 → relay → pump',
+    'Upload main firmware and verify Serial output',
+    'Confirm pump fires when threshold exceeded',
+  ],
+  backend: [
+    'Install Node.js on your computer',
+    'Create project and install dependencies',
+    'Install ntfy app and subscribe to your topic',
+    'Run server and test with curl command',
+    'Confirm ESP32 posts data to server',
+    'Receive test push notification on phone',
+  ],
+  polish: [
+    'Enclose hardware in a waterproof box',
+    'Add moisture history dashboard (React/HTML)',
+    'Document the project with photos for portfolio',
+    'Update your resume bullet points',
+    'Push code to GitHub',
+    'Write a brief README with wiring diagram',
+  ]
+};
+
+let checked = {};
+
+function renderChecklists() {
+  Object.entries(lists).forEach(([key, items]) => {
+    const container = document.getElementById('checklist-' + key);
+    container.innerHTML = items.map((item, i) => {
+      const id = key + '-' + i;
+      const isChecked = checked[id];
+      return `<div class="checklist-item" onclick="toggleCheck('${id}')">
+        <div class="check-box ${isChecked ? 'checked' : ''}" id="box-${id}"></div>
+        <div class="check-label ${isChecked ? 'checked' : ''}">${item}</div>
+      </div>`;
+    }).join('');
+  });
+  updateProgress();
+}
+
+function toggleCheck(id) {
+  checked[id] = !checked[id];
+  renderChecklists();
+}
+
+function updateProgress() {
+  const total = Object.values(lists).flat().length;
+  const done = Object.values(checked).filter(Boolean).length;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${done} / ${total} complete`;
+}
+
+renderChecklists();
+updateSim(65);
+</script>
+</body>
+</html>
